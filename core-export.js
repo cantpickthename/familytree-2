@@ -1,8 +1,19 @@
 // core-export.js
 // Export and import manager for family tree
+// 
+// INTEGRATION NOTE: When the core tree files are implemented, 
+// the export functions should be updated to pass line style settings:
+//
+// Example integration for SVG export:
+//   const lineStyleSettings = getLineStyleSettingsForExport(treeCore.canvasRenderer);
+//   exportTree('svg', lineStyleSettings);
+//
+// The treeCore object should have a canvasRenderer property that contains
+// the current line style settings in its settings property.
 
-import { exportGEDCOM } from './exporter.js';
+import { exportGEDCOM, exportTree } from './exporter.js';
 import { notifications } from './notifications.js';
+import { getLineStyleSettingsForExport } from './ui-line-styles.js';
 
 export function setupExport(treeCore) {
   // --- Export Buttons ---
