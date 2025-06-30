@@ -233,32 +233,36 @@ export class CanvasRenderer {
 
   // Draw only connections (for export)
   drawConnectionsOnly(ctx) {
-    ctx.lineWidth = 2;
-    
     for (const conn of this.connections) {
       const fromNode = this.nodes.get(conn.from);
       const toNode = this.nodes.get(conn.to);
       
       if (!fromNode || !toNode) continue;
       
+      // Set line properties based on connection type (same as main drawConnections)
       if (conn.type === 'spouse') {
-        ctx.strokeStyle = this.settings.spouseConnectionColor;
-        ctx.setLineDash([4, 2]);
+        ctx.strokeStyle = this.settings.spouseLineColor;
+        ctx.lineWidth = this.settings.spouseLineThickness;
+        this.setLineDash(ctx, this.settings.spouseLineStyle);
       } else if (conn.type === 'line-only') {
-        ctx.strokeStyle = '#9b59b6';
-        ctx.setLineDash([8, 4, 2, 4]);
+        ctx.strokeStyle = this.settings.lineOnlyColor;
+        ctx.lineWidth = this.settings.lineOnlyThickness;
+        this.setLineDash(ctx, this.settings.lineOnlyStyle);
       } else {
-        ctx.strokeStyle = this.settings.connectionColor;
-        ctx.setLineDash([]);
+        // Family connections (parent-child)
+        ctx.strokeStyle = this.settings.familyLineColor;
+        ctx.lineWidth = this.settings.familyLineThickness;
+        this.setLineDash(ctx, this.settings.familyLineStyle);
       }
       
       ctx.beginPath();
       ctx.moveTo(fromNode.x, fromNode.y);
       ctx.lineTo(toNode.x, toNode.y);
       ctx.stroke();
-      
-      ctx.setLineDash([]);
     }
+    
+    // Reset line dash
+    ctx.setLineDash([]);
   }
 
   // Draw only nodes (for export)
