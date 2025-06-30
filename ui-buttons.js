@@ -48,13 +48,10 @@ export function setupButtons(treeCore) {
     treeCore.connectBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      e.stopImmediatePropagation();
       console.log('🔗 Link button clicked');
       
-      // Use setTimeout to ensure the click doesn't interfere with canvas events
-      setTimeout(() => {
-        treeCore.handleConnectSelected();
-      }, 10);
+      // Use the original handleConnectSelected method
+      treeCore.handleConnectSelected();
     });
   }
 

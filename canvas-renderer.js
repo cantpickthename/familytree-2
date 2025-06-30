@@ -649,6 +649,18 @@ export class CanvasRenderer {
     const pos = { x: e.clientX, y: e.clientY };
     const hit = this.getNodeAt(pos.x, pos.y);
     
+    // Check if the click was on a floating button or other UI element
+    const clickedElement = document.elementFromPoint(pos.x, pos.y);
+    const isFloatingButton = clickedElement?.closest('.floating-btn');
+    
+    console.log('🎯 Canvas mouseup at:', pos, 'hit:', hit?.id, 'target:', e.target.tagName, e.target.id, 'elementFromPoint:', clickedElement?.tagName, clickedElement?.id, 'isFloatingButton:', !!isFloatingButton);
+    
+    // Don't handle canvas events if clicking on UI elements
+    if (isFloatingButton || clickedElement?.closest('.floating-buttons')) {
+      console.log('🎯 Ignoring canvas event - clicked on floating button');
+      return;
+    }
+    
     if (hit && !this.hasDraggedSignificantly) {
       if (this.selectedNodes.has(hit.id)) {
         this.selectedNodes.delete(hit.id);
@@ -664,6 +676,7 @@ export class CanvasRenderer {
       if (connectionHit) {
         this.onConnectionClick?.(connectionHit.connection, connectionHit.index);
       } else {
+        console.log('🎯 Canvas clearing selection - clicked empty area');
         this.selectedNodes.clear();
         this.onSelectionCleared?.();
         this.needsRedraw = true;
