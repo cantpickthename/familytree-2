@@ -676,6 +676,9 @@ class TreeCoreCanvas {
       }
       
       this.updateRendererSettings();
+      
+      // Update line style UI controls
+      this.updateLineStyleUI(data.settings);
     }
     
     // Restore display preferences
@@ -1327,7 +1330,7 @@ class TreeCoreCanvas {
       const contentGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       contentGroup.setAttribute('transform', `translate(${margin - bounds.x}, ${margin - bounds.y})`);
 
-      // Export connections
+      // Export connections with proper line styles
       for (const conn of this.renderer.connections) {
         const fromNode = this.renderer.nodes.get(conn.from);
         const toNode = this.renderer.nodes.get(conn.to);
@@ -1339,16 +1342,45 @@ class TreeCoreCanvas {
         line.setAttribute('y1', fromNode.y);
         line.setAttribute('x2', toNode.x);
         line.setAttribute('y2', toNode.y);
-        line.setAttribute('stroke-width', '2');
         
+        // Apply proper line styles based on connection type
         if (conn.type === 'spouse') {
-          line.setAttribute('stroke', this.renderer.settings.spouseConnectionColor);
-          line.setAttribute('stroke-dasharray', '4 2');
+          line.setAttribute('stroke', this.renderer.settings.spouseLineColor);
+          line.setAttribute('stroke-width', this.renderer.settings.spouseLineThickness);
+          // Apply spouse line style
+          const spouseStyle = this.renderer.settings.spouseLineStyle;
+          if (spouseStyle === 'dashed') {
+            line.setAttribute('stroke-dasharray', '8 4');
+          } else if (spouseStyle === 'dotted') {
+            line.setAttribute('stroke-dasharray', '2 4');
+          } else if (spouseStyle === 'dash-dot') {
+            line.setAttribute('stroke-dasharray', '8 4 2 4');
+          }
         } else if (conn.type === 'line-only') {
-          line.setAttribute('stroke', '#9b59b6');
-          line.setAttribute('stroke-dasharray', '8 4 2 4');
+          line.setAttribute('stroke', this.renderer.settings.lineOnlyColor);
+          line.setAttribute('stroke-width', this.renderer.settings.lineOnlyThickness);
+          // Apply line-only line style
+          const lineOnlyStyle = this.renderer.settings.lineOnlyStyle;
+          if (lineOnlyStyle === 'dashed') {
+            line.setAttribute('stroke-dasharray', '8 4');
+          } else if (lineOnlyStyle === 'dotted') {
+            line.setAttribute('stroke-dasharray', '2 4');
+          } else if (lineOnlyStyle === 'dash-dot') {
+            line.setAttribute('stroke-dasharray', '8 4 2 4');
+          }
         } else {
-          line.setAttribute('stroke', this.renderer.settings.connectionColor);
+          // Family connections (parent-child)
+          line.setAttribute('stroke', this.renderer.settings.familyLineColor);
+          line.setAttribute('stroke-width', this.renderer.settings.familyLineThickness);
+          // Apply family line style
+          const familyStyle = this.renderer.settings.familyLineStyle;
+          if (familyStyle === 'dashed') {
+            line.setAttribute('stroke-dasharray', '8 4');
+          } else if (familyStyle === 'dotted') {
+            line.setAttribute('stroke-dasharray', '2 4');
+          } else if (familyStyle === 'dash-dot') {
+            line.setAttribute('stroke-dasharray', '8 4 2 4');
+          }
         }
         
         contentGroup.appendChild(line);
@@ -1977,6 +2009,71 @@ class TreeCoreCanvas {
     };
 
     requestAnimationFrame(animate);
+  }
+  
+  // Update line style UI controls with loaded data
+  updateLineStyleUI(settings) {
+    if (!settings) return;
+    
+    // Family line settings
+    if (settings.familyLineStyle) {
+      const familyLineStyleSelect = document.getElementById('familyLineStyleSelect');
+      if (familyLineStyleSelect) {
+        familyLineStyleSelect.value = settings.familyLineStyle;
+      }
+    }
+    if (settings.familyLineThickness !== undefined) {
+      const familyLineThicknessInput = document.getElementById('familyLineThicknessInput');
+      if (familyLineThicknessInput) {
+        familyLineThicknessInput.value = settings.familyLineThickness;
+      }
+    }
+    if (settings.familyLineColor) {
+      const familyLineColorPicker = document.getElementById('familyLineColorPicker');
+      if (familyLineColorPicker) {
+        familyLineColorPicker.value = settings.familyLineColor;
+      }
+    }
+    
+    // Spouse line settings
+    if (settings.spouseLineStyle) {
+      const spouseLineStyleSelect = document.getElementById('spouseLineStyleSelect');
+      if (spouseLineStyleSelect) {
+        spouseLineStyleSelect.value = settings.spouseLineStyle;
+      }
+    }
+    if (settings.spouseLineThickness !== undefined) {
+      const spouseLineThicknessInput = document.getElementById('spouseLineThicknessInput');
+      if (spouseLineThicknessInput) {
+        spouseLineThicknessInput.value = settings.spouseLineThickness;
+      }
+    }
+    if (settings.spouseLineColor) {
+      const spouseLineColorPicker = document.getElementById('spouseLineColorPicker');
+      if (spouseLineColorPicker) {
+        spouseLineColorPicker.value = settings.spouseLineColor;
+      }
+    }
+    
+    // Line-only settings
+    if (settings.lineOnlyStyle) {
+      const lineOnlyStyleSelect = document.getElementById('lineOnlyStyleSelect');
+      if (lineOnlyStyleSelect) {
+        lineOnlyStyleSelect.value = settings.lineOnlyStyle;
+      }
+    }
+    if (settings.lineOnlyThickness !== undefined) {
+      const lineOnlyThicknessInput = document.getElementById('lineOnlyThicknessInput');
+      if (lineOnlyThicknessInput) {
+        lineOnlyThicknessInput.value = settings.lineOnlyThickness;
+      }
+    }
+    if (settings.lineOnlyColor) {
+      const lineOnlyColorPicker = document.getElementById('lineOnlyColorPicker');
+      if (lineOnlyColorPicker) {
+        lineOnlyColorPicker.value = settings.lineOnlyColor;
+      }
+    }
   }
 }
 
