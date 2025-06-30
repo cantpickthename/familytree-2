@@ -43,9 +43,9 @@ export class TreeCoreCanvas {
       console.log('🌳 Initializing TreeCoreCanvas...');
       
       // Initialize canvas renderer
-      const canvas = document.getElementById('treeCanvas');
+      const canvas = document.getElementById('svgArea');
       if (!canvas) {
-        throw new Error('Canvas element not found');
+        throw new Error('SVG canvas element not found');
       }
       
       this.renderer = new CanvasRenderer(canvas);
@@ -78,7 +78,9 @@ export class TreeCoreCanvas {
       
     } catch (error) {
       console.error('❌ Failed to initialize TreeCoreCanvas:', error);
-      notifications.error('Initialization Failed', 'Failed to initialize the application');
+      console.error('Error details:', error.message);
+      console.error('Stack trace:', error.stack);
+      notifications.error('Initialization Failed', `Failed to initialize: ${error.message}`);
       throw error;
     }
   }
