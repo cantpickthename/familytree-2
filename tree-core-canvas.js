@@ -153,7 +153,7 @@ class TreeCoreCanvas {
       this.handleSavePersonFromModal(e.detail);
     });
     
-    // ENHANCED: Enhanced cache loading with better connection restoration
+    // Load cached state
     this.loadCachedState().then((loaded) => {
       if (!loaded) {
         // No cached state found
@@ -802,7 +802,9 @@ class TreeCoreCanvas {
       lineOnlyConnections: this.lineOnlyConnections.size
     });
     
-    // CRITICAL: Regenerate connections AFTER all data is loaded
+    // CRITICAL: Clean up invalid relationships first, then regenerate connections
+    this.cleanupInvalidRelationships();
+    
     console.log('Regenerating connections from restored relationship data...');
     this.regenerateConnections();
     
@@ -878,13 +880,10 @@ class TreeCoreCanvas {
           if (this.renderer.nodes.has(childId) && this.renderer.nodes.has(childData.motherId)) {
             this.renderer.addConnection(childId, childData.motherId, 'parent');
             connectionsAdded++;
-            console.log(`✓ Added mother connection: ${childId} -> ${childData.motherId}`);
           } else {
-            console.warn(`✗ Skipped mother connection ${childId} -> ${childData.motherId} - missing node`);
             skippedConnections++;
           }
         } else {
-          console.log(`○ Skipped hidden mother connection: ${childId} -> ${childData.motherId}`);
           skippedConnections++;
         }
       }
@@ -897,34 +896,35 @@ class TreeCoreCanvas {
           if (this.renderer.nodes.has(childId) && this.renderer.nodes.has(childData.fatherId)) {
             this.renderer.addConnection(childId, childData.fatherId, 'parent');
             connectionsAdded++;
-            console.log(`✓ Added father connection: ${childId} -> ${childData.fatherId}`);
           } else {
-            console.warn(`✗ Skipped father connection ${childId} -> ${childData.fatherId} - missing node`);
             skippedConnections++;
           }
         } else {
-          console.log(`○ Skipped hidden father connection: ${childId} -> ${childData.fatherId}`);
           skippedConnections++;
         }
       }
       
-      // Spouse connections (only add once per pair)
-      if (childData.spouseId && childId < childData.spouseId) {
+      // Spouse connections (only add once per pair, and prevent self-spouse)
+      if (childData.spouseId && childData.spouseId !== childId && childId < childData.spouseId) {
         const connectionKey = this.getConnectionKey(childId, childData.spouseId);
         if (!this.hiddenConnections.has(connectionKey)) {
           // Verify both nodes exist
           if (this.renderer.nodes.has(childId) && this.renderer.nodes.has(childData.spouseId)) {
             this.renderer.addConnection(childId, childData.spouseId, 'spouse');
             connectionsAdded++;
-            console.log(`✓ Added spouse connection: ${childId} -> ${childData.spouseId}`);
           } else {
-            console.warn(`✗ Skipped spouse connection ${childId} -> ${childData.spouseId} - missing node`);
             skippedConnections++;
           }
         } else {
-          console.log(`○ Skipped hidden spouse connection: ${childId} -> ${childData.spouseId}`);
           skippedConnections++;
         }
+      }
+      
+      // Clean up self-spouse relationships
+      if (childData.spouseId === childId) {
+        console.warn(`🔧 Cleaning up self-spouse relationship for person: ${childId}`);
+        childData.spouseId = '';
+        this.personData.set(childId, childData);
       }
     }
     
@@ -2245,6 +2245,50 @@ class TreeCoreCanvas {
       window.notifications.success('Connection Created', `${connectionType} relationship established successfully`);
     }
   }
+  
+  // Clean up invalid relationship data
+  cleanupInvalidRelationships() {
+    let cleaned = 0;
+    for (const [personId, personData] of this.personData) {
+      let hasChanges = false;
+      
+      // Fix self-spouse relationships
+      if (personData.spouseId === personId) {
+        console.warn(`🔧 Cleaning self-spouse for person: ${personId}`);
+        personData.spouseId = '';
+        hasChanges = true;
+        cleaned++;
+      }
+      
+      // Fix self-parent relationships
+      if (personData.motherId === personId) {
+        console.warn(`🔧 Cleaning self-mother for person: ${personId}`);
+        personData.motherId = '';
+        hasChanges = true;
+        cleaned++;
+      }
+      
+      if (personData.fatherId === personId) {
+        console.warn(`🔧 Cleaning self-father for person: ${personId}`);
+        personData.fatherId = '';
+        hasChanges = true;
+        cleaned++;
+      }
+      
+      // Save changes
+      if (hasChanges) {
+        this.personData.set(personId, personData);
+      }
+    }
+    
+    if (cleaned > 0) {
+      console.log(`🔧 Cleaned up ${cleaned} invalid relationships`);
+      this.regenerateConnections();
+      this.renderer.needsRedraw = true;
+    }
+    
+    return cleaned;
+  }
 }
 
 // Create and export instance
@@ -2283,6 +2327,15 @@ if (typeof window !== 'undefined') {
   window.fixConnections = function() {
     if (window.treeCore) {
       window.treeCore.forceRegenerateConnections();
+    } else {
+      console.error('TreeCore not found');
+    }
+  };
+  
+  window.cleanupData = function() {
+    if (window.treeCore) {
+      const cleaned = window.treeCore.cleanupInvalidRelationships();
+      console.log(`🔧 Data cleanup complete. Fixed ${cleaned} issues.`);
     } else {
       console.error('TreeCore not found');
     }
@@ -2350,6 +2403,7 @@ if (typeof window !== 'undefined') {
   console.log('🔧 Enhanced Tree Core Debug Commands:');
   console.log('- debugCache() - Show detailed cache state');
   console.log('- fixConnections() - Force regenerate all connections');
+  console.log('- cleanupData() - Clean up invalid relationships (self-spouse, etc.)');
   console.log('- showRelationships() - Display current family relationships');
   console.log('- clearCacheAndReload() - Clear all cache and reload page');
   console.log('- testConnections() - Test connection regeneration process');
@@ -2357,8 +2411,9 @@ if (typeof window !== 'undefined') {
   console.log('');
   console.log('💡 If connections disappear after page refresh:');
   console.log('1. Run debugCache() to check cache state');
-  console.log('2. Run fixConnections() to restore missing connections');
-  console.log('3. If problem persists, run clearCacheAndReload()');
+  console.log('2. Run cleanupData() to fix invalid relationships');
+  console.log('3. Run fixConnections() to restore missing connections');
+  console.log('4. If problem persists, run clearCacheAndReload()');
 }
 
 function devLog(...args) {
