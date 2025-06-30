@@ -145,7 +145,7 @@ export function setupExport(treeCore) {
       } else {
         // Fallback to regular exportTree function
         import('./exporter.js').then(({ exportTree }) => {
-          exportTree('png-transparent');
+          exportTree('png-transparent', treeCore);
         });
       }
     } catch (error) {
@@ -170,7 +170,7 @@ export function setupExport(treeCore) {
       } else {
         // Fallback to regular exportTree function
         import('./exporter.js').then(({ exportTree }) => {
-          exportTree('jpeg');
+          exportTree('jpeg', treeCore);
         });
       }
     } catch (error) {

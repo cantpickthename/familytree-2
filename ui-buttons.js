@@ -217,7 +217,7 @@ function setupTopToolbar(treeCore) {
 
   function saveAsJSON(treeCore) {
     try {
-      const treeData = treeCore.getAllData ? treeCore.getAllData() : {
+      const treeData = treeCore.getCurrentState ? treeCore.getCurrentState() : {
         people: treeCore.people || [],
         connections: treeCore.connections || []
       };

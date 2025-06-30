@@ -3,11 +3,15 @@
 
 import { notifications } from './notifications.js';
 
-export function exportTree(format) {
-  const original = document.getElementById('svgArea');
-  if (!original) {
-    console.error('SVG area not found');
-    notifications.error('Export Failed', 'SVG area not found');
+export function exportTree(format, treeCore = null) {
+  // Try to get treeCore from global context if not provided
+  if (!treeCore && window.treeCore) {
+    treeCore = window.treeCore;
+  }
+  
+  if (!treeCore || !treeCore.exportCanvasAsSVG) {
+    console.error('TreeCore or export function not found');
+    notifications.error('Export Failed', 'Export functionality not available');
     return;
   }
   
@@ -18,36 +22,21 @@ export function exportTree(format) {
     // Small delay to show the loading notification
     setTimeout(() => {
       try {
-        const clone = original.cloneNode(true);
+        // Get SVG content using the proper export function
+        const svgContent = treeCore.exportCanvasAsSVG();
+        if (!svgContent) {
+          notifications.remove(loadingId);
+          notifications.error('Export Failed', 'Could not generate SVG content');
+          return;
+        }
+        
+        // Parse SVG content to get SVG element
+        const parser = new DOMParser();
+        const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml');
+        const clone = svgDoc.documentElement;
         
         // Remove grid lines and background if they exist
         clone.querySelectorAll('.grid-line').forEach((el) => el.remove());
-        
-        // Ensure the clone has proper styling
-        const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
-        style.textContent = `
-          .person-group circle { 
-            stroke: #2c3e50; 
-            stroke-width: 2px; 
-          }
-          .person-group text.name { 
-            font-weight: 600; 
-            font-family: 'Inter', sans-serif;
-          }
-          .person-group text.dob { 
-            font-size: 12px; 
-            fill: #757575; 
-            font-family: 'Inter', sans-serif;
-          }
-          .relation { 
-            stroke: #7f8c8d; 
-            stroke-width: 2px; 
-          }
-          .relation.spouse { 
-            stroke-dasharray: 4 2; 
-          }
-        `;
-        clone.insertBefore(style, clone.firstChild);
         
         // Get the bounding box of all content
         const bbox = getContentBounds(clone);

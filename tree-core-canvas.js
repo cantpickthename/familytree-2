@@ -2075,10 +2075,38 @@ class TreeCoreCanvas {
       }
     }
   }
+  
+  // Save current tree data as JSON file
+  saveToJSON() {
+    try {
+      const treeData = this.getCurrentState();
+      const dataStr = JSON.stringify(treeData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `family-tree-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      return true;
+    } catch (error) {
+      console.error('Error saving family tree:', error);
+      return false;
+    }
+  }
 }
 
 // Create and export instance
 export const treeCore = new TreeCoreCanvas();
+
+// Make treeCore available globally for export functions
+if (typeof window !== 'undefined') {
+  window.treeCore = treeCore;
+}
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
