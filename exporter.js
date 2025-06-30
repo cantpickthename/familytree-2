@@ -3,7 +3,57 @@
 
 import { notifications } from './notifications.js';
 
-export function exportTree(format) {
+// Helper function to convert line style to SVG stroke-dasharray
+function getStrokeDashArray(lineStyle) {
+  switch (lineStyle) {
+    case 'solid':
+      return 'none';
+    case 'dashed':
+      return '8 4';
+    case 'dotted':
+      return '2 4';
+    case 'dash-dot':
+      return '8 4 2 4';
+    default:
+      return 'none';
+  }
+}
+
+// Helper function to generate dynamic CSS for line styles
+function generateLineStyleCSS(lineStyleSettings) {
+  if (!lineStyleSettings) {
+    // Fallback to default styles if no settings provided
+    return `
+      .relation { 
+        stroke: #7f8c8d; 
+        stroke-width: 2px; 
+      }
+      .relation.spouse { 
+        stroke-dasharray: 4 2; 
+      }
+    `;
+  }
+
+  return `
+    .relation { 
+      stroke: ${lineStyleSettings.familyLineColor || '#7f8c8d'}; 
+      stroke-width: ${lineStyleSettings.familyLineThickness || 2}px; 
+      stroke-dasharray: ${getStrokeDashArray(lineStyleSettings.familyLineStyle || 'solid')};
+    }
+    .relation.spouse { 
+      stroke: ${lineStyleSettings.spouseLineColor || '#e74c3c'}; 
+      stroke-width: ${lineStyleSettings.spouseLineThickness || 2}px; 
+      stroke-dasharray: ${getStrokeDashArray(lineStyleSettings.spouseLineStyle || 'dashed')};
+    }
+    .relation.line-only { 
+      stroke: ${lineStyleSettings.lineOnlyColor || '#9b59b6'}; 
+      stroke-width: ${lineStyleSettings.lineOnlyThickness || 2}px; 
+      stroke-dasharray: ${getStrokeDashArray(lineStyleSettings.lineOnlyStyle || 'dash-dot')};
+    }
+  `;
+}
+
+export function exportTree(format, lineStyleSettings = null) {
   const original = document.getElementById('svgArea');
   if (!original) {
     console.error('SVG area not found');
@@ -39,13 +89,7 @@ export function exportTree(format) {
             fill: #757575; 
             font-family: 'Inter', sans-serif;
           }
-          .relation { 
-            stroke: #7f8c8d; 
-            stroke-width: 2px; 
-          }
-          .relation.spouse { 
-            stroke-dasharray: 4 2; 
-          }
+          ${generateLineStyleCSS(lineStyleSettings)}
         `;
         clone.insertBefore(style, clone.firstChild);
         
