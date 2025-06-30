@@ -1826,8 +1826,6 @@ class TreeCoreCanvas {
     const personA = selectedIds[0];
     const personB = selectedIds[1];
     
-    console.log('Connecting persons:', personA, 'and', personB);
-    
     // Set up connection state
     this.connectionPersonA = personA;
     this.connectionPersonB = personB;
@@ -1837,7 +1835,7 @@ class TreeCoreCanvas {
       this.openConnectionModal();
     } else {
       // Fallback: create connection directly
-      this.createConnection(personA, personB);
+      this.createConnection('spouse');
     }
   }
 

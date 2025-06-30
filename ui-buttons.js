@@ -46,28 +46,41 @@ export function setupButtons(treeCore) {
 
   if (treeCore.connectBtn) {
     treeCore.connectBtn.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
-      treeCore.handleConnectSelected();
+      e.stopImmediatePropagation();
+      console.log('🔗 Link button clicked');
+      
+      // Use setTimeout to ensure the click doesn't interfere with canvas events
+      setTimeout(() => {
+        treeCore.handleConnectSelected();
+      }, 10);
     });
   }
 
   if (treeCore.editBtn) {
     treeCore.editBtn.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
+      e.stopImmediatePropagation();
       treeCore.handleEditSelected();
     });
   }
 
   if (treeCore.styleBtn) {
     treeCore.styleBtn.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
+      e.stopImmediatePropagation();
       treeCore.openStyleModal();
     });
   }
 
   if (treeCore.bringFrontBtn) {
     treeCore.bringFrontBtn.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
+      e.stopImmediatePropagation();
       treeCore.handleBringToFront();
     });
   }
