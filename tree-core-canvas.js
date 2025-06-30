@@ -2098,6 +2098,153 @@ class TreeCoreCanvas {
       return false;
     }
   }
+  
+  // Set up connection modal functionality
+  setupConnectionModal() {
+    const connectionModal = document.getElementById('connectionModal');
+    const motherBtn = document.getElementById('motherBtn');
+    const fatherBtn = document.getElementById('fatherBtn');
+    const childBtn = document.getElementById('childBtn');
+    const spouseBtn = document.getElementById('spouseBtn');
+    const lineOnlyBtn = document.getElementById('lineOnlyBtn');
+    const cancelConnectionModal = document.getElementById('cancelConnectionModal');
+    
+    if (!connectionModal) return;
+    
+    // Set up button event listeners
+    motherBtn?.addEventListener('click', () => this.createConnection('mother'));
+    fatherBtn?.addEventListener('click', () => this.createConnection('father'));
+    childBtn?.addEventListener('click', () => this.createConnection('child'));
+    spouseBtn?.addEventListener('click', () => this.createConnection('spouse'));
+    lineOnlyBtn?.addEventListener('click', () => this.createConnection('line-only'));
+    cancelConnectionModal?.addEventListener('click', () => this.closeConnectionModal());
+    
+    // Close on outside click
+    connectionModal.addEventListener('click', (e) => {
+      if (e.target === connectionModal) {
+        this.closeConnectionModal();
+      }
+    });
+  }
+  
+  // Open connection modal
+  openConnectionModal() {
+    const connectionModal = document.getElementById('connectionModal');
+    if (!connectionModal) {
+      console.error('Connection modal not found');
+      return;
+    }
+    
+    // Show modal
+    connectionModal.style.display = 'flex';
+    
+    // Add to modal stack if exists
+    if (window.modalStack) {
+      window.modalStack.push('connectionModal');
+    }
+  }
+  
+  // Close connection modal
+  closeConnectionModal() {
+    const connectionModal = document.getElementById('connectionModal');
+    if (connectionModal) {
+      connectionModal.style.display = 'none';
+    }
+    
+    // Remove from modal stack if exists
+    if (window.modalStack) {
+      const index = window.modalStack.indexOf('connectionModal');
+      if (index > -1) {
+        window.modalStack.splice(index, 1);
+      }
+    }
+    
+    // Clear connection state
+    this.connectionPersonA = null;
+    this.connectionPersonB = null;
+  }
+  
+  // Create connection with specific type
+  createConnection(connectionType) {
+    if (!this.connectionPersonA || !this.connectionPersonB) {
+      console.error('Missing connection persons');
+      return;
+    }
+    
+    const personA = this.connectionPersonA;
+    const personB = this.connectionPersonB;
+    
+    console.log(`Creating ${connectionType} connection between:`, personA, 'and', personB);
+    
+    // Get person data
+    const personAData = this.personData.get(personA) || {};
+    const personBData = this.personData.get(personB) || {};
+    
+    // Create connection based on type
+    switch (connectionType) {
+      case 'mother':
+        // PersonA becomes mother of PersonB
+        personBData.motherId = personA;
+        this.renderer.addConnection(personB, personA, 'parent');
+        break;
+        
+      case 'father':
+        // PersonA becomes father of PersonB  
+        personBData.fatherId = personA;
+        this.renderer.addConnection(personB, personA, 'parent');
+        break;
+        
+      case 'child':
+        // PersonB becomes child of PersonA (PersonA is parent)
+        // Need to determine if PersonA should be mother or father
+        if (!personBData.motherId) {
+          personBData.motherId = personA;
+        } else if (!personBData.fatherId) {
+          personBData.fatherId = personA;
+        } else {
+          // Both parents exist, fallback to line-only connection
+          this.lineOnlyConnections.add(`${personA}-${personB}`);
+          this.renderer.addConnection(personA, personB, 'line-only');
+          break;
+        }
+        this.renderer.addConnection(personB, personA, 'parent');
+        break;
+        
+      case 'spouse':
+        // Create spouse relationship
+        personAData.spouseId = personB;
+        personBData.spouseId = personA;
+        this.renderer.addConnection(personA, personB, 'spouse');
+        break;
+        
+      case 'line-only':
+        // Create line-only connection
+        this.lineOnlyConnections.add(`${personA}-${personB}`);
+        this.renderer.addConnection(personA, personB, 'line-only');
+        break;
+    }
+    
+    // Save updated person data
+    this.personData.set(personA, personAData);
+    this.personData.set(personB, personBData);
+    
+    // Update display
+    this.renderer.needsRedraw = true;
+    
+    // Close modal
+    this.closeConnectionModal();
+    
+    // Clear selection
+    this.clearSelection();
+    
+    // Save state for undo
+    this.undoRedoManager.pushUndoState();
+    
+    // Show notification
+    if (window.notifications) {
+      window.notifications.success('Connection Created', `${connectionType} relationship established successfully`);
+    }
+  }
 }
 
 // Create and export instance
